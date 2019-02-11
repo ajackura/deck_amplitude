@@ -1,5 +1,5 @@
-#ifndef DECK_PI_N_H_
-#define DECK_PI_N_H_
+#ifndef DECK_PION_NUCLEON_H_
+#define DECK_PION_NUCLEON_H_
 
 #include <cmath>
 #include <iostream>
@@ -10,7 +10,7 @@
 namespace dk = deck_kinematics;
 namespace pn = pion_nucleon_scattering;
 
-namespace deck_pi_n
+namespace deck_pion_nucleon
 {
   /****************************************************************************
    Global Variables
@@ -110,6 +110,33 @@ namespace deck_pi_n
   /****************************************************************************
    Functions
   ****************************************************************************/
+
+  cd simple_piN ( double W,
+                  double s1,
+		  double s,
+		  double t,
+                  double z,
+                  double phi,
+                  int mu,
+                  int mu_p )
+  {
+    if ( mu_p != mu )
+      {
+        cd amp(0.0,0.0);
+        return amp;
+      }
+    else if ( mu_p == mu )
+      {
+        cd amp;
+        double alpha = 9.0;
+        double s_piN = dk::s_pi_N ( W,s1,s,t,z,phi );
+        amp = s_piN;//* std::exp ( -alpha * t );
+        return amp;
+      }
+  }
+
+
+
 
   double X ( double W,
              double s,

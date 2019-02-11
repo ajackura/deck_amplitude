@@ -1,3 +1,76 @@
+ /****************************************************************************
+   Name         :: deck_kinematics.h
+   Author       :: Andrew W. Jackura
+   Contact      :: ajackura@iu.edu
+   Date         :: Feb 07, 2019
+   
+   Dependencies :: deck_parameters.h
+   
+   Description  :: Module 'namespace deck_kinematics',
+                   contains the kinematic functions needed to compute
+                   the Ascoli Deck amplitude [1,2], for hadroproduction
+                   of 3-pions.
+
+                   pi^-  +  N --> pi^-  +  pi^-  +  pi^+  +  N
+
+                   Kinematic labels:
+                   Initial -- pi^- ( p_a )
+                           -- N    ( p_b, mu )
+                   Final   -- pi^- ( p_1 )
+                           -- pi^- ( p_2 )
+                           -- pi^+ ( p_3 )
+                           -- N    ( p_d, mu_p )
+
+                  
+                   Kinematics are evaluated in the Gottfried-Jackson (GJ)
+                   frame, i.e. p_1 + p_2 + p_3 = 0. The z-axis is
+                   defined along the initial pion, and the target and
+                   recoil nucleon lie in the xz-plane. Some important 
+                   kinematic variable definitions are
+
+                   's   = total center-of-momentum energy-squared'
+                   't   = total invariant momentum-transfer-squared'
+                   'W   = invariant mass of final 3-pions'
+                   's1  = invariant mass of di-pion sub-channel'
+                   'z   = cosine of angle of di-pion in GJ frame'
+                   'phi = azimuthal angle of di-pion in GJ frame'
+                   
+                   s    = ( p_a + p_b )^2
+                   t    = ( p_b - p_d )^2
+                   W^2  = ( p_1 + p_2 + p_3 )^2
+                   s1   = ( p_2 + p_3 )^2
+
+                   Additonal important variables are
+                   'z1  = cosine of angle of pion in di-pion rest frame'
+
+                   Included functions:
+                   - Ea ( W, t )
+                   - Ed ( W, s )
+                   - Eb ( W, s, t )
+                   - E1 ( W, s1 )
+                   - pa ( W, t )
+                   - pb ( W, s, t )
+                   - pd ( W, s )
+                   - p1 ( W, s1 )
+                   - cos_xi ( W, s, t )
+                   - cos_eps ( W, s, t )
+                   - psi ( W, s1, t, z )
+                   - t_R ( W, s1, t, z )
+                   - s_pi_N ( W, s1, s, t, z, phi )
+                   - q1 ( s1 )
+                   - s2 ( W, s1, z1 )
+                   - s3 ( W, s1, z1 )
+                   - q2 ( W, s1, z1 )
+                   - p2 ( W, s1, z1 )
+                   - z2 ( W, s1, z1 )
+                   - cos_theta12 ( W, s1, z1 )
+
+   References   :: [1] G. Ascoli, L. M. Jones, B. Weinstein, and H. W. Wyld
+                       Phys. Rev. D8, 3894 (1973)                          
+                             
+                   [2] G. Ascoli and H. W. Wyld,
+                       Phys. Rev. D12, 43 (1975)   
+ ****************************************************************************/
 #ifndef DECK_KINEMATICS_H_
 #define DECK_KINEMATICS_H_
 
@@ -120,73 +193,6 @@ namespace deck_kinematics
 			int Npts );
 
 
-  double Ea ( double s );
-
-  double Eb ( double s );
-
-  double Ed ( double s );
-
-  double E1 ( double s, 
-	      double s1 );
-
-  double pa ( double s );
-  
-  double pb ( double s );
-
-  double pd ( double s );
-  
-  double p1 ( double s, 
-	      double s1 );
-
-  double cos_alpha ( double s );
-
-  double cos_beta ( double s );
-
-  double psi ( double s,
-	       double s1,
-	       double z );
-
-  double t1 ( double s,
-	      double s1,
-	      double z );
-  
-  double s4 ( double s,
-	      double s1,
-	      double z,
-	      double phi );
-
-  double q1 ( double s1 );
-
-  double s2 ( double s,
-	      double s1,
-	      double z1 );
-
-  double s3 ( double s,
-	      double s1,
-	      double z1 );
-  
-  double q2 ( double s,
-	      double s1,
-	      double z1 );
-
-  double p2 ( double s,
-	      double s1,
-	      double z1 );
-
-  double z2 ( double s,
-	      double s1,
-	      double z1 );
-
-  double cos_theta12 ( double s,
-		       double s1, 
-		       double z1 );
-
-  void plot_Eabd_Pabd ( double s,
-                        double t,
-			double Wi,
-			double Wf,
-                        int Npts );
-
   void plot_psi_tR ( double s,
                      double t,
                      double s1,
@@ -297,7 +303,9 @@ namespace deck_kinematics
 		  double phi )
   {
     double sin_z   = sqrt ( 1.0 - z * z );
+    //    std::cerr << " sine " << sin_z << std::endl;
     double sin_eps = sqrt ( 1.0 - cos_eps ( W, s, t ) * cos_eps ( W, s, t ) );
+    //    std::cerr << " cos eps " << cos_eps << std::endl;
     double cos_a   = cos_eps ( W, s, t ) * z + sin_eps * sin_z * cos ( phi );
     double tmp1    = 2.0 * pd ( W, s ) * p1 ( W, s1 ) * cos_a;
     double tmp2    = sq_mpi + sq_mn + 2.0 * Ed ( W, s ) * E1 ( W, s1 );

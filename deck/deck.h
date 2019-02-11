@@ -267,7 +267,7 @@ namespace deck
 		   int mu_p )
   {
      gsl_integration_workspace *work_ptr =
-       gsl_integration_workspace_alloc (1000);
+       gsl_integration_workspace_alloc (10000);
 
      double lower_limit =  0.0;   /* lower limit a */
      double upper_limit =  2.0 * pi;   /* upper limit b */
@@ -293,11 +293,14 @@ namespace deck
      Fimag.function = &integrand_piN_imag;
      Freal.params = &params;
      Fimag.params = &params;
+     
+     std::cout << " phi - int success " << std::endl;
 
      gsl_integration_qags (&Freal, lower_limit, upper_limit, abs_error,
-			   rel_error, 1000, work_ptr, &result_real, &error);
+			   rel_error, 5000, work_ptr, &result_real, &error);
      gsl_integration_qags (&Fimag, lower_limit, upper_limit, abs_error,
-			   rel_error, 1000, work_ptr, &result_imag, &error);
+			   rel_error, 5000, work_ptr, &result_imag, &error);
+     std::cout << " phi - int after success " << std::endl;
      return cd( result_real, result_imag );
   }
 
@@ -320,6 +323,7 @@ namespace deck
     //    igrand = simple_piN (s,sigma,cos_th,phi,mu,mu_p) * std::exp(-xi *MM * phi);
     igrand = dpN::amp_pi_N ( W, s0, t, sigma, cos_th, phi, mu, mu_p )
       * std::exp(-xi *MM * phi);
+    std::cout << "igrand " << igrand << std::endl;
     return std::real ( igrand / 2.0 / pi );
   }
 
@@ -342,9 +346,24 @@ namespace deck
     //    igrand = simple_piN (s,sigma,cos_th,phi,mu,mu_p) * std::exp(-xi *MM * phi);
     igrand = dpN::amp_pi_N ( W, s0, t, sigma, cos_th, phi, mu, mu_p )
       * std::exp(-xi *MM * phi);
+    std::cout << " igrand imag " << igrand << std::endl;
     return std::imag ( igrand / 2.0 / pi );
   }
 
+  cd Deck_full ( double s,
+		 double t,
+		 double W,
+		 double s1,
+		 double z,
+		 double phi )
+  {
+    int mu = 1;
+    int mu_p = 1;
+    cd piN = dpN::amp_pi_N ( W, s, t, s1, z, phi, mu, mu_p );
+    double xt1 = dk::t_R ( W, s1, t, z );
+    cd regge = 1.0 / ( xt1 - sq_m_pi );
+    return regge * piN;
+  }
 
   cd simple_piN ( double s,
 		  double sigma,
@@ -393,11 +412,16 @@ namespace deck
   {
     double xS       = (double) S;
     double xlam     = (double) lam;
-    double xt1      = t_1 ( s, sigma, cos_th );
-    double xcos_psi = cos_psi ( s, sigma, xt1 );
-    double psi      = acos ( xcos_psi );
-    double v        = sqrt ( (2.0 * xS + 1.0 ) ) * 
-      rf::djmn ( xS, 0.0, xlam, xcos_psi ) / ( sq_m_pi - xt1 );
+    //double xt1      = t_1 ( s, sigma, cos_th );
+    //    double xcos_psi = cos_psi ( s, sigma, xt1 );
+    double W        = std::sqrt(s);
+    double xt1      = dk::t_R ( W, sigma, t, cos_th );
+    double psi      = dk::psi ( W, sigma, t, cos_th );
+
+      //    double psi      =acos ( xcos_psi );
+    cd v        = sqrt ( (2.0 * xS + 1.0 ) ) * 
+      //      rf::djmn ( xS, 0.0, xlam, xcos_psi ) / ( sq_m_pi - xt1 );
+      rf::wigner_d_matrix ( xS, 0.0, xlam, psi ) / ( sq_m_pi - xt1 );
 
     double b        = 1.7;
     double ff       = exp ( b * xt1 );
@@ -446,7 +470,7 @@ namespace deck
   {
     
     gsl_integration_workspace *work_ptr =
-      gsl_integration_workspace_alloc (1000);
+      gsl_integration_workspace_alloc (10000);
 
     double lower_limit = -1.0;   /* lower limit a */
     double upper_limit =  1.0;   /* upper limit b */
@@ -474,10 +498,14 @@ namespace deck
     Freal.params = &params;
     Fimag.params = &params;
 
+    std::cout << " theta - int success " << std::endl;
+
     gsl_integration_qags (&Freal, lower_limit, upper_limit, abs_error, 
-			  rel_error, 1000, work_ptr, &result_real, &error);
+			  rel_error, 5000, work_ptr, &result_real, &error);
     gsl_integration_qags (&Fimag, lower_limit, upper_limit, abs_error, 
-			  rel_error, 1000, work_ptr, &result_imag, &error);
+			  rel_error, 5000, work_ptr, &result_imag, &error);
+
+    std::cout << " theta - int after success " << std::endl;
     return cd( result_real, result_imag );
 
   }
@@ -498,8 +526,11 @@ namespace deck
     double xM    = (double) M;
     double xlam  = (double) lam;
     
+    double theta = acos(cos_th);
+    double wd = rf::wigner_d_matrix ( xJ, xM, xlam, theta );
+
     cd dr = deck_reduced ( M, lam, S, s, sigma, cos_th );
-    double wd = rf::djmn ( xJ, xM, xlam, cos_th );
+    //    double wd = rf::djmn ( xJ, xM, xlam, cos_th );
     cd igrand = std::sqrt( 2.0 * xJ + 1.0 ) * dr * wd / 2.0;
     return std::real ( igrand );
   }
@@ -519,8 +550,11 @@ namespace deck
     double xM   = (double) M;
     double xlam = (double) lam;
 
+    double theta = acos(cos_th);
+    double wd = rf::wigner_d_matrix ( xJ, xM, xlam, theta );
+
     cd dr     = deck_reduced ( M, lam, S, s, sigma, cos_th );
-    double wd = rf::djmn ( xJ, xM, xlam, cos_th );
+    //    double wd = rf::djmn ( xJ, xM, xlam, cos_th );
     cd igrand = std::sqrt( 2.0 * xJ + 1.0 ) * dr * wd / 2.0;
     return std::imag ( igrand );
   }
@@ -542,7 +576,7 @@ namespace deck
     for ( int i = 1; i <= nstep; i++ )
       {
 	cos_theta = std::cos( theta );
-	wd = rf::djmn ( J, m_p, m, cos_theta );
+	//	wd = rf::djmn ( J, m_p, m, cos_theta );
 	std::cout << theta << " " << wd << std::endl;
 	theta = theta + step;
       }
@@ -621,12 +655,64 @@ namespace deck
       for ( int i = 1; i <= nstep; i++ )
 	{
 	  s = M3pi * M3pi;
-	  cd proj = projection ( J, M, S, lam, s, sigma );
-	  std::cout << M3pi << " " << abs (proj) << std::endl;
+	  std::cerr << M3pi << std::endl;
+	  //	  cd proj = projection ( J, M, S, lam, s, sigma );
+	  //	  std::cerr << M3pi << " " << abs (proj) << std::endl;
+	  //	  std::cout << M3pi << " " << abs (proj) << std::endl;
 	  M3pi = M3pi + step;
 	}
 
     }
+
+
+  //  s0, t, s, sigma, cosGJ, phiGJ
+  void read_production_mc ( vd &s_vec,
+			    vd &t_vec,
+			    vd &Wsq_vec,
+			    vd &s1_vec,
+			    vd &z_vec,
+			    vd &phi_vec )
+  {
+    std::string MCfile = "production_MC.txt";
+
+
+    std::ifstream inputFile(MCfile);
+
+    double s_num, t_num, Wsq_num, s1_num, z_num, phi_num; 
+    if (inputFile)
+      {
+        while ( inputFile >> s_num >> t_num >> 
+		Wsq_num >> s1_num >> z_num >> phi_num  )
+          {
+            s_vec.push_back(s_num);
+	    t_vec.push_back(t_num);
+	    Wsq_vec.push_back(Wsq_num);
+	    s1_vec.push_back(s1_num);
+	    z_vec.push_back(z_num);
+	    phi_vec.push_back(phi_num);
+          }
+      }
+  }
+
+  void out_deck ( )
+  {
+    vd s_vec, t_vec, Wsq_vec, s1_vec, z_vec, phi_vec;
+    read_production_mc ( s_vec, t_vec, Wsq_vec, s1_vec, z_vec, phi_vec );
+    
+    cd dd;
+    for ( int i = 0; i < s_vec.size(); i++ )
+      {
+	double WW = std::sqrt(Wsq_vec[i]);
+	dd = Deck_full ( s_vec[i], t_vec[i], WW, 
+			 s1_vec[i], z_vec[i], phi_vec[i] );
+
+	std::cout << s_vec[i] << " " << t_vec[i] << " " 
+		  << Wsq_vec[i] << " " << s1_vec[i] << " "
+		  << z_vec[i] << " " << phi_vec[i] << " "
+		  << std::real (dd) << " " << std::imag (dd) << std::endl;
+      }
+    
+  }
 
 }
 

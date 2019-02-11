@@ -20,20 +20,28 @@ int main()
 
   int nstep = 500;
   
-  
+  d::out_deck ( );
 
   int J;
   int M;
   int S;
   int lam;
 
-  std::cin >> J;
-  std::cin >> M;
-  std::cin >> S;
-  std::cin >> lam;
+  //  std::cin >> J;
+  //  std::cin >> M;
+  //  std::cin >> S;
+  //  std::cin >> lam;
 
+
+  //  1.78668
+  //1.79886
   
-    d::plot_1d_projection ( J, M, S, lam, M3pi_i, M3pi_f, nstep );
+  double s = pow(1.79886,2);//std::pow(1.8,2); //1.7745
+
+  double sigma = d::m_rho * d::m_rho;
+  //  std::cout << d::projection ( J, M, S, lam, s, sigma ) << std::endl;
+
+    //  d::plot_1d_projection ( J, M, S, lam, M3pi_i, M3pi_f, nstep );
 
   //  d::plot_1d_intensity ( cos_th_i,
   //  			 cos_th_f,

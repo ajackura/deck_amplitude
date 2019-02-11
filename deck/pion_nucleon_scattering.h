@@ -1,3 +1,49 @@
+/****************************************************************************
+   Name         :: pion_nucleon_scattering.h
+   Author       :: Andrew W. Jackura, V. Mathieu
+   Contact      :: ajackura@iu.edu
+   Date         :: Feb 06, 2019
+   
+   Dependencies :: rotational_functions.h
+   
+   Description  :: Module 'namespace pion_nucleon_scattering',
+                   contains functions to compute pion-nucleon, 
+                   pi N --> pi N, scattering amplitudes and observables.
+                   Details can be found in Ref. [1] and 
+                   http://cgl.soic.indiana.edu/jpac/PiN.php.
+                   The low-energy model is the SAID partial wave set [2],
+                   while the high-energy model is a Regge parameterization
+                   discussed in Ref. [1]. 
+
+                   Some important kinematic variable definitions are
+                   's = center-of-momentum energy-squared'
+                   't = invariant momentum-transfer-squared'
+
+                    pi (p1)   \  /  pi (p2)       s = ( p1 + p2 )^2
+                               \/                 t = ( p2 - p4 )^2
+                               /\
+                     N (p2)   /  \   N (p4)
+
+                   Included functions:
+                   - legendre_polynomial ( n, x )
+                   - legendre_derivative ( n, x )
+                   - legendre_recursion  ( n, x )
+                   - clebsch_gordan ( j1, m1, j2, m2, j, m )
+                   - factorial10 (n)
+                   - wigner_d_matrix ( j, m, n, beta )
+                   - wigner_D_matrix ( j, m, n, alpha, beta, gamma )
+                   - spherical_harmonics ( l, m, beta, alpha )
+                   - cartesian_spherical_harmonics ( l, m, r )
+
+   References   :: [1] V. Mathieu, I. V. Danilkin, C. Fernandez-Ramirez,
+                       M. R. Pennington, D. Schott, A. P. Szczepaniak,
+                       and G. Fox,
+                       Phys. Rev. D 92, 074004 (2015)                          
+                             
+                   [2] R.L. Workman, R.A. Arndt, W.J. Briscoe,
+                       M.W. Paris, I.I. Strakovsky,
+                       Phys. Rev. C 86, 035202 (2012)   
+****************************************************************************/
 #ifndef PION_NUCLEON_SCATTERING_H_
 #define PION_NUCLEON_SCATTERING_H_
 
@@ -9,6 +55,10 @@
 #include<vector>
 #include<complex>
 
+#include "rotational_functions.h"
+
+namespace rf = rotational_functions;
+
 typedef std::complex<double> cd;
 typedef std::vector<double> vd;
 typedef std::vector<vd> v2d;
@@ -17,17 +67,8 @@ typedef std::vector<cd> cvd;
 typedef std::vector<cvd> cv2d;
 typedef std::vector<cv2d> cv3d;
 
-
   /****************************************************************************
-   Namespace pion_nucleon_scattering
-   
-   This namespace is a collection of functions to compute the 
-   on-shell pi N -> pi N amplitude and cross sections
-
-   The low-energy region used the SAID partial wave amplitudes
-
-   The high-energy model is: JPAC Regge model by V. Mathieu
-
+   Namespace :: pion_nucleon_scattering
    ***************************************************************************/
 namespace pion_nucleon_scattering
 {
@@ -330,16 +371,18 @@ namespace pion_nucleon_scattering
 		  double t,
 		  cv2d &ABC )
   {
-    double w = sqrt ( s );
-    double E = ( s + m_N * m_N - m_pi * m_pi ) / 2.0 / w;
-    double sth  = pow( m_N * m_N + m_pi * m_pi, 2 );
-    double spth = pow( m_N * m_N - m_pi * m_pi, 2 );
+    double w    = sqrt ( s );
+    double E    = ( s + m_N * m_N - m_pi * m_pi ) / 2.0 / w;
+    double sth  = pow( m_N  + m_pi, 2 );
+    double spth = pow( m_N  - m_pi, 2 );
     double qcm  = sqrt ( ( s - sth ) * ( s - spth ) ) / 2.0 / sqrt( s );
     double z    = 1.0 + t / 2.0 / qcm / qcm;
     double Tlab = ( s - m_N * m_N - m_pi * m_pi ) / 2.0 / m_N - m_pi;
     double Elab = Tlab + m_pi;
     double Plab = sqrt ( Elab * Elab - m_pi * m_pi );
 
+    //    std::cerr << w << " " << E << " " << qcm << " " << z << " " << 
+    //      Tlab << " " << Elab << " " << Plab << std::endl;
 
     if ( Plab > 2.5 )
       {
@@ -362,6 +405,8 @@ namespace pion_nucleon_scattering
 	PW3p[L] = (1.0-eps)*PW[3][L][k] + eps*PW[3][L][k+1];
       }
 
+
+    //    std::cerr << "PW " << PW1m[3] << " " << PW1p[3] << std::endl;
     
     cd fp(0,0);
     cd fm(0,0);
@@ -381,8 +426,8 @@ namespace pion_nucleon_scattering
 
     for ( int L = 0; L < 8; L++ )
       {
-	pol = legendre ( L, z );
-	pol1d = legendre_derivative ( L, z );
+	pol = rf::legendre_polynomial ( L, z );
+	pol1d = rf::legendre_derivative ( L, z );
 	double ll = (double) L;
 	f1 = f1 + ( ( ll + 1.0 ) * PW1p[L] + ll * PW1m[L] ) * pol;
 	f3 = f3 + ( ( ll + 1.0 ) * PW3p[L] + ll * PW3m[L] ) * pol;
@@ -402,10 +447,10 @@ namespace pion_nucleon_scattering
     fm = ( f1 - f3 ) / 3.0;
     gm = ( g1 - g3 ) / 3.0;
 
-    f2p = -gp;
-    f1p = fp - z*f2p;
-    f2m = -gm;
-    f1m = fm - z*f2m;
+    f2p = - gp;
+    f1p =   fp - z * f2p;
+    f2m = - gm;
+    f1m =   fm - z * f2m;
 
     ABC[0][0] = 4* pi * ( (w+m_N)/(E+m_N)*f1p - (w-m_N)/(E-m_N)*f2p  );
     ABC[1][0] = 4* pi * ( (w+m_N)/(E+m_N)*f1m - (w-m_N)/(E-m_N)*f2m  );
@@ -422,19 +467,31 @@ namespace pion_nucleon_scattering
 
   /*************************************************************************** 
    Function SAID_pion_nucleon_pw ( );
+
    
+
+   The SAID WI08 solution is valid up to Plab = 2.5 GeV
+   The SAID solution includes 8 waves for both parity
+   and s-channel isospin - In the spectroscopic notation L(2I)(2J) 
+
+        P11  D13  F15  G17   H19  I111  J113
+   S11  P13  D15  F17  G19  H111  I113  J115
+        P31  D33  F35  G37   H39  I311  J313
+   S31  P33  D35  F37  G39  H311  I313  J315
+
+
    The SAID solution computed for the reaction
    pi N --> pi N
    for all isospin compibation
    
    return wval, the vector of W = Sqrt{s} values
    return double complex PW[5][10]
-   PW[1][L] is I = 1/2; J = L-1/2
-   PW[2][L] is I = 1/2; J = L+1/2
-   PW[3][L] is I = 3/2; J = L-1/2
-   PW[4][L] is I = 3/2; J = L+1/2
+   PW[0][L] is I = 1/2; J = L-1/2
+   PW[1][L] is I = 1/2; J = L+1/2
+   PW[2][L] is I = 3/2; J = L-1/2
+   PW[3][L] is I = 3/2; J = L+1/2
    
-   PW[0][0] is plab the momentum of the pion in the lab
+   'plab' is plab the momentum of the pion in the lab
    
    The last index is the index of W
    MAXIMUM L is 8
@@ -523,23 +580,21 @@ namespace pion_nucleon_scattering
 	      }
 	  }
       }
-    
-    
-    // write test output    
-    //    std::cout << SAIDfilename.size() << std::endl;
-    //        for (int i = 0; i < SAIDfilename.size(); i++ )
-    //    {
-    //    	std::cout << SAIDfilename[i] << std::endl;
-    //    }
-
-    //std::cout << plab.size() << std::endl;
-	//    for (int i = 0; i < plab.size(); i++ )
-	//     {
-	//    	std::cout << plab[i] << " " << RePW[0][3][i] << " " << ImPW[0][3][i] << std::endl;
-	//    }
-
     return;
   }
+
+
+  void plot_SAID_pw ( int j,
+		      int L )
+  {
+    for (int i = 0; i < plab.size(); i++ )                            
+      {                                                                
+	std::cout << plab[i] << " " << std::real(PW[j][L][i]) << " " 
+		  << std::imag(PW[j][L][i]) << std::endl;
+      }
+    return;
+  }
+
 
   /****************************************************************************
    Function legendre ( n, x )
